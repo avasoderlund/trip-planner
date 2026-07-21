@@ -1,0 +1,835 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip Planner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+:root{
+  --paper:#EAEEEB;
+  --card:#FBFBF8;
+  --ink:#1B2A2A;
+  --muted:#6C7A76;
+  --line:#D6DCD8;
+  --line-soft:#E4E9E6;
+  --petrol:#2E5A5C;
+  --petrol-soft:#E3ECEB;
+  --ochre:#C98A2B;
+  --rust:#B85539;
+  --white:#ffffff;
+  --shadow:0 1px 2px rgba(27,42,42,.04),0 8px 24px rgba(27,42,42,.06);
+  --radius:16px;
+  font-family:'Instrument Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:15px;color:var(--ink)}
+:focus-visible{outline:2px solid var(--petrol);outline-offset:2px;border-radius:6px}
+.mono{font-family:'Space Mono',monospace}
+.display{font-family:'Bricolage Grotesque',sans-serif}
+.wrap{max-width:1060px;margin:0 auto;padding:32px 22px 96px}
+
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand .kicker{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--petrol)}
+.brand h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:34px;letter-spacing:-.02em;margin:0;line-height:1}
+.brand .home{font-size:13.5px;color:var(--muted);margin-top:5px}
+.btn-primary{background:var(--ink);color:#F2F5F3;border-radius:999px;padding:12px 20px;font-weight:600;font-size:14.5px;display:inline-flex;align-items:center;gap:8px;transition:transform .12s ease,background .12s ease}
+.btn-primary:hover{background:#243a3a;transform:translateY(-1px)}
+.btn-primary .plus{font-size:18px;line-height:1;margin-top:-1px}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:30px}
+.stat{background:var(--card);border:1px solid var(--line-soft);border-radius:var(--radius);padding:16px 18px}
+.stat .num{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:27px;letter-spacing:-.01em;line-height:1}
+.stat .lbl{font-size:12px;color:var(--muted);margin-top:5px;letter-spacing:.02em}
+.stat .num small{font-size:15px;font-weight:500;color:var(--muted)}
+.overtext{color:var(--rust)}
+
+.editmoney{display:flex;align-items:baseline;gap:1px}
+.editmoney > span{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;color:var(--muted)}
+.editnum{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;letter-spacing:-.01em;border:none;background:transparent;width:100%;padding:0;color:var(--ink);border-bottom:1px dashed var(--line);-moz-appearance:textfield;min-width:0}
+.editnum:focus{outline:none;border-bottom-color:var(--petrol)}
+.editnum::-webkit-outer-spin-button,.editnum::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stat .editmoney > span{font-size:22px}
+.stat .editnum{font-size:24px}
+.bud-box .editmoney > span{font-size:20px}
+.bud-box .editnum{font-size:23px}
+
+.panel{background:var(--card);border:1px solid var(--line-soft);border-radius:20px;padding:22px 24px;box-shadow:var(--shadow);margin-bottom:30px}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+.panel-head h2{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:600;margin:0;letter-spacing:-.01em}
+.panel-head .hint{font-size:11.5px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:.04em}
+.ribbon-scroll{overflow-x:auto;padding-bottom:6px}
+.ribbon{position:relative;min-width:640px;height:118px}
+.ribbon .axis{position:absolute;left:0;right:0;top:64px;height:2px;background:var(--line)}
+.ribbon .tick{position:absolute;top:56px;width:1px;height:18px;background:var(--line)}
+.ribbon .tick .m{position:absolute;top:22px;left:0;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap;letter-spacing:.04em}
+.ribbon .today{position:absolute;top:40px;height:48px;width:2px;background:var(--rust);opacity:.8}
+.ribbon .today::after{content:'today';position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:9px;color:var(--rust);letter-spacing:.08em;text-transform:uppercase}
+.seg{position:absolute;top:52px;height:26px;border-radius:999px;display:flex;align-items:center;padding:0 11px;cursor:pointer;color:#fff;font-size:11.5px;font-weight:600;white-space:nowrap;transition:transform .12s ease,box-shadow .12s ease;box-shadow:0 2px 6px rgba(27,42,42,.14)}
+.seg:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(27,42,42,.2)}
+
+.section-title{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:600;margin:0 0 14px;letter-spacing:-.01em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:16px}
+.card{position:relative;background:var(--card);border:1px solid var(--line-soft);border-radius:var(--radius);padding:18px 18px 16px;cursor:pointer;overflow:hidden;transition:transform .13s ease,box-shadow .13s ease,border-color .13s ease}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--line)}
+.card .stripe{position:absolute;left:0;top:0;bottom:0;width:5px}
+.card .ctop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px}
+.card .dest{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:20px;letter-spacing:-.01em;line-height:1.1}
+.card .country{font-size:12.5px;color:var(--muted);margin-top:2px}
+.countdown{flex-shrink:0;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:5px 9px;border-radius:999px;background:var(--petrol-soft);color:var(--petrol);text-align:center;line-height:1.15;letter-spacing:.02em}
+.countdown.past{background:#EEEDEA;color:#9a9a92}
+.countdown.now{background:#F6E4DE;color:var(--rust)}
+.card .dates{font-family:'Space Mono',monospace;font-size:12px;color:var(--ink);margin-bottom:14px;letter-spacing:.01em}
+.card .meta{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+.card .meta b{color:var(--ink);font-weight:600}
+.bar{height:6px;border-radius:999px;background:var(--line-soft);overflow:hidden}
+.bar > span{display:block;height:100%;border-radius:999px}
+.card .budline{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:6px}
+.card .budline b{color:var(--ink);font-weight:600}
+
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:20px;padding:52px 28px;text-align:center}
+.empty h3{font-family:'Bricolage Grotesque',sans-serif;font-size:20px;margin:0 0 6px}
+.empty p{color:var(--muted);margin:0 0 20px;font-size:14.5px}
+.linkish{background:none;color:var(--petrol);font-weight:600;font-size:13.5px;text-decoration:underline;text-underline-offset:3px}
+
+.back{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--muted);font-weight:500;margin-bottom:20px}
+.back:hover{color:var(--ink)}
+.detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.detail-head .dh-left{display:flex;gap:16px;align-items:flex-start}
+.dh-chip{width:14px;height:52px;border-radius:6px;flex-shrink:0;margin-top:4px}
+.detail-head h1{font-family:'Bricolage Grotesque',sans-serif;font-size:36px;font-weight:700;letter-spacing:-.02em;margin:0;line-height:1}
+.detail-head .sub{font-size:14px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.detail-head .sub .mono{color:var(--ink)}
+.dh-actions{display:flex;gap:8px}
+.btn-ghost{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--ink);transition:border-color .12s,background .12s}
+.btn-ghost:hover{border-color:var(--petrol);background:#fff}
+.btn-ghost.danger:hover{border-color:var(--rust);color:var(--rust)}
+
+.tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--line-soft);border-radius:999px;padding:5px;margin-bottom:22px;width:fit-content;max-width:100%;overflow-x:auto}
+.tab{padding:8px 16px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted);white-space:nowrap;transition:color .12s}
+.tab.active{background:var(--ink);color:#F2F5F3}
+.tab:hover:not(.active){color:var(--ink)}
+
+.day-group{margin-bottom:20px}
+.day-label{font-family:'Space Mono',monospace;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--petrol);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.day-label::after{content:'';flex:1;height:1px;background:var(--line-soft)}
+.itin-item{display:flex;gap:14px;background:var(--card);border:1px solid var(--line-soft);border-radius:12px;padding:13px 15px;margin-bottom:8px;align-items:flex-start}
+.itin-item .t{font-family:'Space Mono',monospace;font-size:12.5px;color:var(--petrol);font-weight:700;min-width:52px;padding-top:1px}
+.itin-item .body{flex:1}
+.itin-item .body .ti{font-weight:600;font-size:14.5px}
+.itin-item .body .no{font-size:13px;color:var(--muted);margin-top:2px}
+.row-del{color:var(--muted);font-size:16px;line-height:1;padding:2px 6px;border-radius:6px;flex-shrink:0}
+.row-del:hover{color:var(--rust);background:#F6E4DE}
+
+.log-item{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--line-soft);border-radius:12px;padding:13px 15px;margin-bottom:8px}
+.mode-badge{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:4px 9px;border-radius:7px;background:var(--petrol-soft);color:var(--petrol);white-space:nowrap;margin-top:2px}
+.mode-badge.stay{background:#F1E9DC;color:var(--ochre)}
+.log-item .body{flex:1}
+.log-item .ti{font-weight:600;font-size:14.5px}
+.log-item .no{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+
+.pack-item{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line-soft)}
+.pack-item:last-of-type{border-bottom:none}
+.check{width:21px;height:21px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.check.on{background:var(--petrol);border-color:var(--petrol);color:#fff}
+.pack-item .px{flex:1;font-size:14.5px}
+.pack-item.done .px{color:var(--muted);text-decoration:line-through}
+.progress-line{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:14px}
+
+.bud-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+.bud-box{border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;background:var(--card)}
+.bud-box .l{font-size:11.5px;color:var(--muted);letter-spacing:.02em;margin-bottom:3px}
+.bud-box .v{font-family:'Bricolage Grotesque',sans-serif;font-size:23px;font-weight:600}
+.bud-box .v.over{color:var(--rust)}
+.exp-item{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line-soft)}
+.exp-item:last-of-type{border-bottom:none}
+.exp-cat{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:6px;background:var(--petrol-soft);color:var(--petrol)}
+.exp-item .el{flex:1;font-size:14.5px}
+.exp-item .ev{font-family:'Space Mono',monospace;font-weight:700;font-size:14px}
+
+.addrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.addrow input,.addrow select{border:1px solid var(--line);border-radius:10px;padding:10px 13px;background:#fff}
+.addrow input.grow{flex:1;min-width:120px}
+.addrow input.time{width:96px}
+.addrow input.amt{width:110px}
+.addrow input[type=date]{width:152px}
+.addrow .btn-add{background:var(--petrol);color:#fff;border-radius:10px;padding:10px 16px;font-weight:600;font-size:13.5px}
+.addrow .btn-add:hover{background:#264a4c}
+
+textarea.notes{width:100%;min-height:220px;border:1px solid var(--line-soft);border-radius:14px;padding:18px;background:var(--card);resize:vertical;line-height:1.6;font-size:15px}
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px}
+.img-cell{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line-soft);aspect-ratio:4/3;background:#e9edeb}
+.img-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.img-cell .del{position:absolute;top:6px;right:6px;background:rgba(20,32,32,.72);color:#fff;border-radius:50%;width:24px;height:24px;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
+.img-cell .del:hover{background:var(--rust)}
+.muted-note{font-size:12px;color:var(--muted);margin-top:10px}
+
+.overlay{position:fixed;inset:0;background:rgba(20,32,32,.42);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal{background:var(--paper);border-radius:22px;padding:26px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:92vh;overflow-y:auto}
+.modal h3{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;margin:0 0 20px;font-weight:700}
+.field{margin-bottom:15px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;letter-spacing:.01em}
+.field input{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;background:#fff}
+.two{display:flex;gap:12px}
+.two .field{flex:1}
+.swatches{display:flex;gap:9px;flex-wrap:wrap}
+.sw{width:32px;height:32px;border-radius:9px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.sw:hover{transform:scale(1.1)}
+.sw.sel{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap}
+.modal-actions .cancel{color:var(--muted);font-weight:600;padding:12px 18px;font-size:14px}
+.modal-actions .cancel:hover{color:var(--ink)}
+.modal-actions .save{background:var(--ink);color:#F2F5F3;border-radius:999px;padding:12px 24px;font-weight:600;font-size:14px}
+.modal-actions .save:hover{background:#243a3a}
+
+@media(max-width:680px){
+  .wrap{padding:22px 16px 80px}
+  .brand h1{font-size:28px}
+  .detail-head h1{font-size:28px}
+  .bud-summary{grid-template-columns:1fr}
+}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============ constants ============ */
+const PALETTE = ["#2E5A5C","#C15B3F","#C98A2B","#2C4A6E","#7A4A63","#5B7A4B","#2E7D80","#9A6A2E"];
+const CATS = ["Food","Transit","Stay","Activities","Shopping","Other"];
+const MODES = ["Flight","Train","Bus","Ferry","Car","Walk","Other"];
+const TABS = ["itinerary","transport","stay","packing","budget","notes"];
+const TAB_LABELS = {itinerary:"Itinerary",transport:"Transport",stay:"Stay",packing:"Packing",budget:"Budget",notes:"Notes"};
+
+const state = { view:"overview", tripId:null, tab:"itinerary", trips:[], overallBudget:0 };
+let notesTimer = null;
+
+/* ============ storage ============ */
+const store = {
+  async load(){
+    let raw=null;
+    if(window.storage){
+      try{ const r=await window.storage.get("planner",false); if(r) raw=JSON.parse(r.value); }catch(e){}
+      if(!raw){ try{ const r=await window.storage.get("trips",false); if(r) raw=JSON.parse(r.value); }catch(e){} }
+    }
+    if(!raw){
+      try{ const ls=localStorage.getItem("tripPlanner.v2")||localStorage.getItem("tripPlanner.trips"); if(ls) raw=JSON.parse(ls); }catch(e){}
+    }
+    return raw;
+  },
+  save(){
+    const payload={trips:state.trips, overallBudget:state.overallBudget};
+    const str=JSON.stringify(payload);
+    if(window.storage){ try{ window.storage.set("planner", str, false); }catch(e){} }
+    try{ localStorage.setItem("tripPlanner.v2", str); }catch(e){ console.warn("local save failed (maybe too many photos)", e); }
+  }
+};
+function persist(){ store.save(); }
+
+/* ============ helpers ============ */
+const uid = () => Math.random().toString(36).slice(2,9);
+function iso(d){ return d.toISOString().slice(0,10); }
+function daysFromNow(n){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+n); return iso(d); }
+function parse(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function today0(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+function fmtRange(a,b){
+  const o={month:"short",day:"numeric"};
+  const da=parse(a), db=parse(b);
+  const same = da.getMonth()===db.getMonth() && da.getFullYear()===db.getFullYear();
+  return `${da.toLocaleDateString("en-US",o)} – ${same? db.getDate() : db.toLocaleDateString("en-US",o)}`;
+}
+function fmtDay(s){ return s? parse(s).toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}) : "—"; }
+function fmtShort(s){ return s? parse(s).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "—"; }
+function countdown(t){
+  const now=today0(), s=parse(t.startDate), e=parse(t.endDate);
+  const diff=Math.round((s-now)/86400000);
+  if(now>e) return {txt:"done", cls:"past"};
+  if(now>=s && now<=e) return {txt:"now", cls:"now"};
+  if(diff===0) return {txt:"today", cls:"now"};
+  if(diff===1) return {txt:"1 day", cls:""};
+  return {txt:diff+" days", cls:""};
+}
+function money(n){ return "$" + Math.round(+n||0).toLocaleString("en-US"); }
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function sortedTrips(){ return [...state.trips].sort((a,b)=>a.startDate.localeCompare(b.startDate)); }
+function curTrip(){ return state.trips.find(t=>t.id===state.tripId); }
+function val(id){ const el=document.getElementById(id); return el? (el.value||"").trim() : ""; }
+function focusId(id){ const el=document.getElementById(id); if(el) el.focus(); }
+
+/* ============ sample data ============ */
+function sampleTrips(){
+  return [
+    {
+      id:uid(), destination:"Stockholm", country:"Sweden", color:PALETTE[6],
+      startDate:daysFromNow(12), endDate:daysFromNow(14), budget:520, spent:245,
+      notes:"Ferry can be cheaper than flying if we book early. Greta wants the Fotografiska museum.",
+      itinerary:[
+        {id:uid(),date:daysFromNow(12),time:"09:40",title:"Depart Copenhagen",note:""},
+        {id:uid(),date:daysFromNow(12),time:"14:00",title:"Check in — hostel in Södermalm",note:"Drop bags, walk around"},
+        {id:uid(),date:daysFromNow(13),time:"10:00",title:"Gamla Stan old town",note:"Fika somewhere cute"},
+        {id:uid(),date:daysFromNow(13),time:"15:00",title:"Fotografiska museum",note:""},
+        {id:uid(),date:daysFromNow(14),time:"11:00",title:"Vasa Museum, then head home",note:""},
+      ],
+      transport:[
+        {id:uid(),mode:"Flight",label:"Copenhagen → Stockholm",date:daysFromNow(12),time:"09:40",detail:"SAS · conf ABC123",cost:130},
+        {id:uid(),mode:"Flight",label:"Stockholm → Copenhagen",date:daysFromNow(14),time:"17:20",detail:"SAS · conf ABC123",cost:0},
+      ],
+      stay:[
+        {id:uid(),name:"City Backpackers Hostel",checkin:daysFromNow(12),checkout:daysFromNow(14),detail:"Upplandsgatan 2A · conf 55219",cost:115},
+      ],
+      packing:[
+        {id:uid(),text:"Passport + travel card",done:true},
+        {id:uid(),text:"Rain jacket",done:false},
+        {id:uid(),text:"Portable charger",done:false},
+        {id:uid(),text:"Comfy walking shoes",done:true},
+      ],
+      expenses:[
+        {id:uid(),label:"Round-trip flight",cat:"Transit",amount:130},
+        {id:uid(),label:"Hostel 2 nights",cat:"Stay",amount:115},
+      ],
+      images:[]
+    },
+    {
+      id:uid(), destination:"Berlin", country:"Germany", color:PALETTE[1],
+      startDate:daysFromNow(33), endDate:daysFromNow(36), budget:620, spent:90,
+      notes:"Long weekend. Sunday most shops are closed — save museums for then.",
+      itinerary:[
+        {id:uid(),date:daysFromNow(33),time:"18:00",title:"Arrive, dinner in Kreuzberg",note:""},
+        {id:uid(),date:daysFromNow(34),time:"10:00",title:"East Side Gallery + Museum Island",note:""},
+      ],
+      transport:[{id:uid(),mode:"Bus",label:"Copenhagen → Berlin",date:daysFromNow(33),time:"12:30",detail:"FlixBus · conf 8842",cost:90}],
+      stay:[], packing:[{id:uid(),text:"Passport",done:false},{id:uid(),text:"Cash (euros)",done:false}],
+      expenses:[{id:uid(),label:"FlixBus round-trip",cat:"Transit",amount:90}], images:[]
+    },
+    {
+      id:uid(), destination:"Amsterdam", country:"Netherlands", color:PALETTE[3],
+      startDate:daysFromNow(58), endDate:daysFromNow(61), budget:720, spent:0,
+      notes:"Book the Anne Frank House tickets ~6 weeks ahead — they sell out.",
+      itinerary:[], transport:[], stay:[],
+      packing:[{id:uid(),text:"Book Anne Frank tickets",done:false}], expenses:[], images:[]
+    }
+  ];
+}
+
+/* ============ normalize ============ */
+function normalize(raw){
+  let trips, ob=0;
+  if(Array.isArray(raw)) trips=raw;
+  else if(raw && Array.isArray(raw.trips)){ trips=raw.trips; ob=+raw.overallBudget||0; }
+  else return null;
+  trips.forEach(t=>{
+    t.itinerary=t.itinerary||[]; t.transport=t.transport||[]; t.stay=t.stay||[];
+    t.packing=t.packing||[]; t.expenses=t.expenses||[]; t.images=t.images||[];
+    t.budget=+t.budget||0;
+    if(typeof t.spent!=="number") t.spent=(t.expenses||[]).reduce((s,e)=>s+(+e.amount||0),0);
+  });
+  state.overallBudget=ob;
+  return trips;
+}
+
+/* ============ trip mutations ============ */
+function addOrUpdateTrip(data){
+  if(data.id){
+    Object.assign(curTripById(data.id), {destination:data.destination,country:data.country,color:data.color,startDate:data.startDate,endDate:data.endDate,budget:+data.budget||0});
+  } else {
+    state.trips.push({
+      id:uid(), destination:data.destination, country:data.country, color:data.color,
+      startDate:data.startDate, endDate:data.endDate, budget:+data.budget||0, spent:0,
+      notes:"", itinerary:[], transport:[], stay:[], packing:[], expenses:[], images:[]
+    });
+  }
+  persist();
+}
+function curTripById(id){ return state.trips.find(t=>t.id===id); }
+function deleteTrip(id){ state.trips=state.trips.filter(t=>t.id!==id); persist(); }
+
+/* ============ image handling (with downscale) ============ */
+function addImage(t, file){
+  if(!file || !/^image\//.test(file.type)) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      let {width,height}=img; const max=1280;
+      if(width>max||height>max){ const s=Math.min(max/width,max/height); width=Math.round(width*s); height=Math.round(height*s); }
+      let src;
+      try{
+        const c=document.createElement("canvas"); c.width=width; c.height=height;
+        c.getContext("2d").drawImage(img,0,0,width,height);
+        src=c.toDataURL("image/jpeg",0.72);
+      }catch(e){ src=reader.result; }
+      (t.images=t.images||[]).push({id:uid(),src});
+      persist(); if(curTrip()===t) renderTab();
+    };
+    img.onerror=()=>{ (t.images=t.images||[]).push({id:uid(),src:reader.result}); persist(); if(curTrip()===t) renderTab(); };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============ render root ============ */
+function render(){
+  document.getElementById("app").innerHTML = state.view==="overview" ? overviewHTML() : detailHTML();
+}
+function renderTab(){ const tb=document.getElementById("tabbody"); if(tb) tb.innerHTML=tabBody(curTrip()); }
+
+/* ============ overview ============ */
+function overviewHTML(){
+  const trips=sortedTrips();
+  const now=today0();
+  const upcoming=trips.filter(t=>parse(t.endDate)>=now);
+  const countries=new Set(trips.map(t=>t.country.trim().toLowerCase()).filter(Boolean)).size;
+  const totalSpent=trips.reduce((s,t)=>s+(+t.spent||0),0);
+  const ob=+state.overallBudget||0;
+  const left=ob-totalSpent;
+
+  let body;
+  if(trips.length===0){
+    body=`<div class="empty">
+      <h3>No trips yet</h3>
+      <p>Add your first weekend away — or load a few samples to see how it works.</p>
+      <button class="btn-primary" data-act="new"><span class="plus">+</span> Add a trip</button>
+      <div style="margin-top:16px"><button class="linkish" data-act="samples">load sample trips</button> · <button class="linkish" data-act="import">restore a backup</button></div>
+    </div>`;
+  } else {
+    body=`${ribbonHTML(trips)}
+      <h2 class="section-title">Your trips</h2>
+      <div class="grid">${trips.map(cardHTML).join("")}</div>`;
+  }
+
+  return `
+    <div class="topbar">
+      <div class="brand">
+        <span class="kicker">Study abroad · trip planner</span>
+        <h1>Where to next</h1>
+        <span class="home">${trips.length} trip${trips.length===1?"":"s"} planned</span>
+      </div>
+      ${trips.length? `<div class="topbar-actions">
+        <button class="btn-ghost" data-act="export">Back up</button>
+        <button class="btn-ghost" data-act="import">Restore</button>
+        <button class="btn-primary" data-act="new"><span class="plus">+</span> Add trip</button>
+      </div>`:""}
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="num">${upcoming.length}</div><div class="lbl">Upcoming trips</div></div>
+      <div class="stat"><div class="num">${countries}</div><div class="lbl">Countries</div></div>
+      <div class="stat"><div class="editmoney"><span>$</span><input id="ov-budget" class="editnum" type="number" min="0" value="${ob}"></div><div class="lbl">Semester budget</div></div>
+      <div class="stat"><div class="num">${money(totalSpent)}</div><div class="lbl">Spent so far</div></div>
+      <div class="stat"><div class="num"><span id="ov-left" class="${left<0?'overtext':''}">${money(Math.abs(left))}</span></div><div class="lbl" id="ov-left-label">${left<0?'Over budget':'Left to spend'}</div></div>
+    </div>
+
+    ${body}`;
+}
+
+function ribbonHTML(trips){
+  const starts=trips.map(t=>parse(t.startDate)), ends=trips.map(t=>parse(t.endDate));
+  let min=new Date(Math.min(...starts, today0())), max=new Date(Math.max(...ends));
+  min=new Date(min.getFullYear(),min.getMonth(),1);
+  max=new Date(max.getFullYear(),max.getMonth()+1,1);
+  const span=(max-min)||1, pos=d=>((d-min)/span)*100;
+  let ticks="", m=new Date(min);
+  while(m<=max){ ticks+=`<div class="tick" style="left:${pos(m)}%"><span class="m">${m.toLocaleDateString("en-US",{month:"short"})}</span></div>`; m=new Date(m.getFullYear(),m.getMonth()+1,1); }
+  const tl=pos(today0());
+  const todayMark=(tl>=0&&tl<=100)?`<div class="today" style="left:${tl}%"></div>`:"";
+  const segs=trips.map((t,i)=>{
+    const l=pos(parse(t.startDate)), w=Math.max(pos(parse(t.endDate))-l,4.5);
+    return `<div class="seg" style="left:${l}%;min-width:${w}%;background:${t.color};top:${52+(i%2)*30}px" data-trip="${t.id}" title="${esc(t.destination)}">${esc(t.destination)}</div>`;
+  }).join("");
+  return `<div class="panel">
+    <div class="panel-head"><h2>Your semester at a glance</h2><span class="hint">tap a trip →</span></div>
+    <div class="ribbon-scroll"><div class="ribbon" style="height:${118+(trips.length>4?18:0)}px">
+      <div class="axis"></div>${ticks}${todayMark}${segs}
+    </div></div>
+  </div>`;
+}
+
+function cardHTML(t){
+  const cd=countdown(t);
+  const spent=+t.spent||0, bud=+t.budget||0;
+  const pct=bud>0?Math.min(100,(spent/bud)*100):0, over=spent>bud&&bud>0;
+  const packDone=(t.packing||[]).filter(p=>p.done).length;
+  return `<div class="card" data-trip="${t.id}">
+    <div class="stripe" style="background:${t.color}"></div>
+    <div class="ctop">
+      <div><div class="dest">${esc(t.destination)}</div><div class="country">${esc(t.country)}</div></div>
+      <div class="countdown ${cd.cls}">${cd.txt}</div>
+    </div>
+    <div class="dates">${fmtRange(t.startDate,t.endDate)}</div>
+    <div class="meta">
+      <span><b>${(t.itinerary||[]).length}</b> plans</span>
+      <span><b>${(t.transport||[]).length}</b> transit</span>
+      <span><b>${packDone}/${(t.packing||[]).length}</b> packed</span>
+    </div>
+    <div class="budline"><span>Budget</span><span><b>${money(spent)}</b> / ${money(bud)}</span></div>
+    <div class="bar"><span style="width:${pct}%;background:${over?'var(--rust)':t.color}"></span></div>
+  </div>`;
+}
+
+/* ============ detail ============ */
+function detailHTML(){
+  const t=curTrip();
+  if(!t){ state.view="overview"; return overviewHTML(); }
+  const cd=countdown(t);
+  return `
+    <button class="back" data-act="back">← All trips</button>
+    <div class="detail-head">
+      <div class="dh-left">
+        <div class="dh-chip" style="background:${t.color}"></div>
+        <div>
+          <h1>${esc(t.destination)}</h1>
+          <div class="sub">
+            <span>${esc(t.country)}</span>·
+            <span class="mono">${fmtRange(t.startDate,t.endDate)}</span>·
+            <span class="mono">${money(t.spent)} / ${money(t.budget)}</span>·
+            <span class="countdown ${cd.cls}" style="display:inline-block">${cd.txt}</span>
+          </div>
+        </div>
+      </div>
+      <div class="dh-actions">
+        <button class="btn-ghost" data-act="edit">Edit</button>
+        <button class="btn-ghost danger" data-act="deltrip">Delete</button>
+      </div>
+    </div>
+    <div class="tabs">
+      ${TABS.map(tb=>`<button class="tab ${state.tab===tb?"active":""}" data-tab="${tb}">${TAB_LABELS[tb]}</button>`).join("")}
+    </div>
+    <div id="tabbody">${tabBody(t)}</div>`;
+}
+
+function tabBody(t){
+  switch(state.tab){
+    case "itinerary": return itinBody(t);
+    case "transport": return transportBody(t);
+    case "stay": return stayBody(t);
+    case "packing": return packBody(t);
+    case "budget": return budgetBody(t);
+    case "notes": return notesBody(t);
+  }
+  return "";
+}
+
+function itinBody(t){
+  const items=[...(t.itinerary||[])].sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  const groups={}; items.forEach(it=>{ (groups[it.date]=groups[it.date]||[]).push(it); });
+  const dates=Object.keys(groups).sort();
+  let html=dates.length? dates.map(d=>`
+    <div class="day-group">
+      <div class="day-label">${fmtDay(d)}</div>
+      ${groups[d].map(it=>`
+        <div class="itin-item">
+          <div class="t">${esc(it.time||"–")}</div>
+          <div class="body"><div class="ti">${esc(it.title)}</div>${it.note?`<div class="no">${esc(it.note)}</div>`:""}</div>
+          <button class="row-del" data-del-itin="${it.id}" title="Remove">×</button>
+        </div>`).join("")}
+    </div>`).join("") : `<p class="muted-note" style="margin:6px 0 4px">Nothing planned yet — add your first stop below.</p>`;
+  html+=`<div class="addrow">
+      <input type="date" id="it-date" value="${t.startDate}" title="Date">
+      <input class="time" type="time" id="it-time" title="Time">
+      <input class="grow" id="it-title" placeholder="What's the plan? (e.g. Vasa Museum)">
+      <button class="btn-add" data-act="add-itin">Add</button>
+    </div>
+    <input class="grow" id="it-note" placeholder="Optional note…" style="border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-top:8px;width:100%">`;
+  return html;
+}
+
+function transportBody(t){
+  const items=[...(t.transport||[])].sort((a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||"")));
+  let html=items.length? items.map(x=>`
+    <div class="log-item">
+      <span class="mode-badge">${esc(x.mode||"Trip")}</span>
+      <div class="body">
+        <div class="ti">${esc(x.label)}</div>
+        <div class="no">${fmtShort(x.date)}${x.time?" · "+esc(x.time):""}${x.detail?" · "+esc(x.detail):""}${x.cost?" · "+money(x.cost):""}</div>
+      </div>
+      <button class="row-del" data-del-transport="${x.id}">×</button>
+    </div>`).join("") : `<p class="muted-note" style="margin:6px 0 4px">No transport booked yet — flights, trains, buses go here.</p>`;
+  html+=`<div class="addrow">
+      <select id="tr-mode">${MODES.map(m=>`<option>${m}</option>`).join("")}</select>
+      <input class="grow" id="tr-label" placeholder="e.g. Copenhagen → Stockholm">
+      <input type="date" id="tr-date" value="${t.startDate}">
+      <input class="time" type="time" id="tr-time">
+    </div>
+    <div class="addrow">
+      <input class="grow" id="tr-detail" placeholder="Airline / confirmation # / notes (optional)">
+      <input class="amt mono" id="tr-cost" type="number" min="0" placeholder="$ cost">
+      <button class="btn-add" data-act="add-transport">Add</button>
+    </div>
+    <p class="muted-note">Costs here are just for reference — log them under Budget if you want them counted.</p>`;
+  return html;
+}
+
+function stayBody(t){
+  const items=[...(t.stay||[])].sort((a,b)=>((a.checkin||"")).localeCompare(b.checkin||""));
+  let html=items.length? items.map(x=>`
+    <div class="log-item">
+      <span class="mode-badge stay">Stay</span>
+      <div class="body">
+        <div class="ti">${esc(x.name)}</div>
+        <div class="no">${fmtShort(x.checkin)} → ${fmtShort(x.checkout)}${x.detail?" · "+esc(x.detail):""}${x.cost?" · "+money(x.cost):""}</div>
+      </div>
+      <button class="row-del" data-del-stay="${x.id}">×</button>
+    </div>`).join("") : `<p class="muted-note" style="margin:6px 0 4px">No place to stay added yet — hostels, hotels, Airbnbs go here.</p>`;
+  html+=`<div class="addrow">
+      <input class="grow" id="st-name" placeholder="Hostel / hotel / Airbnb name">
+      <input type="date" id="st-in" value="${t.startDate}" title="Check in">
+      <input type="date" id="st-out" value="${t.endDate}" title="Check out">
+    </div>
+    <div class="addrow">
+      <input class="grow" id="st-detail" placeholder="Address / confirmation (optional)">
+      <input class="amt mono" id="st-cost" type="number" min="0" placeholder="$ total">
+      <button class="btn-add" data-act="add-stay">Add</button>
+    </div>`;
+  return html;
+}
+
+function packBody(t){
+  const list=t.packing||[], done=list.filter(p=>p.done).length;
+  let html=`<div class="progress-line">${done} of ${list.length} packed</div>`;
+  html+=list.length? list.map(p=>`
+    <div class="pack-item ${p.done?"done":""}">
+      <button class="check ${p.done?"on":""}" data-toggle-pack="${p.id}">${p.done?"✓":""}</button>
+      <span class="px">${esc(p.text)}</span>
+      <button class="row-del" data-del-pack="${p.id}">×</button>
+    </div>`).join("") : `<p class="muted-note">Nothing on the list yet.</p>`;
+  html+=`<div class="addrow">
+      <input class="grow" id="pack-input" placeholder="Add an item (e.g. adapter plug)">
+      <button class="btn-add" data-act="add-pack">Add</button>
+    </div>`;
+  return html;
+}
+
+function budgetBody(t){
+  const bud=+t.budget||0, spent=+t.spent||0, left=bud-spent;
+  const exps=t.expenses||[];
+  let html=`<div class="bud-summary">
+      <div class="bud-box"><div class="l">Budget</div><div class="editmoney"><span>$</span><input id="bud-budget" class="editnum" type="number" min="0" value="${bud}"></div></div>
+      <div class="bud-box"><div class="l">Spent</div><div class="editmoney"><span>$</span><input id="bud-spent" class="editnum" type="number" min="0" value="${spent}"></div></div>
+      <div class="bud-box"><div class="l" id="bud-remaining-label">${left<0?"Over by":"Remaining"}</div><div class="v ${left<0?"over":""}" id="bud-remaining">${money(Math.abs(left))}</div></div>
+    </div>
+    <p class="muted-note" style="margin-bottom:16px">Type Budget or Spent directly. Logging a purchase below adds it to Spent for you.</p>`;
+  html+=exps.length? exps.map(e=>`
+    <div class="exp-item">
+      <span class="exp-cat">${esc(e.cat)}</span>
+      <span class="el">${esc(e.label)}</span>
+      <span class="ev">${money(+e.amount||0)}</span>
+      <button class="row-del" data-del-exp="${e.id}">×</button>
+    </div>`).join("") : "";
+  html+=`<div class="addrow">
+      <input class="grow" id="exp-label" placeholder="Log a purchase (e.g. train ticket)">
+      <select id="exp-cat">${CATS.map(c=>`<option>${c}</option>`).join("")}</select>
+      <input class="amt mono" id="exp-amt" type="number" min="0" placeholder="$">
+      <button class="btn-add" data-act="add-exp">Add</button>
+    </div>`;
+  return html;
+}
+
+function notesBody(t){
+  const imgs=t.images||[];
+  let html=`<textarea class="notes" id="notes-area" placeholder="Reservation numbers, links, recommendations from friends, reminders… anything.">${esc(t.notes||"")}</textarea>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px;flex-wrap:wrap">
+      <button class="btn-ghost" data-act="add-photo">＋ Add photos</button>
+      <span class="muted-note" style="margin:0">${imgs.length} photo${imgs.length===1?"":"s"}</span>
+    </div>`;
+  if(imgs.length) html+=`<div class="img-grid">${imgs.map(im=>`
+      <div class="img-cell"><img src="${im.src}" alt="trip photo"><button class="del" data-del-img="${im.id}" title="Remove">×</button></div>`).join("")}</div>`;
+  html+=`<p class="muted-note">Notes save as you type. Photos are stored with this planner (kept small automatically).</p>`;
+  return html;
+}
+
+/* ============ trip modal ============ */
+function openTripModal(existing){
+  const t=existing||{destination:"",country:"",startDate:daysFromNow(7),endDate:daysFromNow(9),budget:"",color:PALETTE[0]};
+  const ov=document.createElement("div");
+  ov.className="overlay";
+  ov.innerHTML=`<div class="modal">
+    <h3>${existing?"Edit trip":"New trip"}</h3>
+    <div class="field"><label>Destination</label><input id="m-dest" value="${esc(t.destination)}" placeholder="Stockholm"></div>
+    <div class="field"><label>Country</label><input id="m-country" value="${esc(t.country)}" placeholder="Sweden"></div>
+    <div class="two">
+      <div class="field"><label>Start</label><input id="m-start" type="date" value="${t.startDate}"></div>
+      <div class="field"><label>End</label><input id="m-end" type="date" value="${t.endDate}"></div>
+    </div>
+    <div class="field"><label>Budget (USD)</label><input id="m-budget" type="number" min="0" value="${t.budget}" placeholder="500"></div>
+    <div class="field"><label>Colour</label><div class="swatches">${PALETTE.map(c=>`<button class="sw ${c===t.color?"sel":""}" data-color="${c}" style="background:${c}"></button>`).join("")}</div></div>
+    <div class="modal-actions">
+      <button class="cancel" data-act="close-modal">Cancel</button>
+      <button class="save" id="m-save">${existing?"Save changes":"Add trip"}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  let chosen=t.color;
+  ov.querySelectorAll(".sw").forEach(s=>s.addEventListener("click",()=>{ ov.querySelectorAll(".sw").forEach(x=>x.classList.remove("sel")); s.classList.add("sel"); chosen=s.dataset.color; }));
+  ov.addEventListener("click",e=>{ if(e.target===ov) ov.remove(); });
+  ov.querySelector('[data-act="close-modal"]').addEventListener("click",()=>ov.remove());
+  ov.querySelector("#m-save").addEventListener("click",()=>{
+    const dest=ov.querySelector("#m-dest").value.trim();
+    if(!dest){ ov.querySelector("#m-dest").focus(); return; }
+    let start=ov.querySelector("#m-start").value||daysFromNow(7);
+    let end=ov.querySelector("#m-end").value; if(!end||end<start) end=start;
+    addOrUpdateTrip({id:existing?existing.id:null,destination:dest,country:ov.querySelector("#m-country").value.trim()||"—",startDate:start,endDate:end,budget:Math.max(0,+ov.querySelector("#m-budget").value||0),color:chosen});
+    ov.remove(); render();
+  });
+}
+
+/* ============ backup / restore ============ */
+function openBackup(mode){
+  const isExport=mode==="export";
+  const json=JSON.stringify({trips:state.trips,overallBudget:state.overallBudget},null,2);
+  const ov=document.createElement("div");
+  ov.className="overlay";
+  ov.innerHTML=`<div class="modal">
+    <h3>${isExport?"Back up your trips":"Restore trips"}</h3>
+    <p class="muted-note" style="margin:-8px 0 14px">${isExport
+      ? "Copy this text and keep it safe — a note or an email to yourself works. To reload it later, use Restore. (Photos aren't included in the copy, but Download keeps a full file.)"
+      : "Paste a backup you saved earlier, then Load. This replaces whatever is in the planner now."}</p>
+    <textarea id="bk-text" class="notes" style="min-height:200px;font-family:'Space Mono',monospace;font-size:12px" ${isExport?"readonly":""} placeholder="Paste your backup text here…">${isExport?esc(json):""}</textarea>
+    <div class="modal-actions">
+      <button class="cancel" data-act="close-modal">Close</button>
+      ${isExport ? `<button class="btn-ghost" id="bk-download">Download file</button><button class="save" id="bk-copy">Copy</button>`
+                 : `<button class="btn-ghost" id="bk-file">Choose file…</button><button class="save" id="bk-load">Load</button>`}
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener("click",e=>{ if(e.target===ov) ov.remove(); });
+  ov.querySelector('[data-act="close-modal"]').addEventListener("click",()=>ov.remove());
+  if(isExport){
+    ov.querySelector("#bk-copy").addEventListener("click",()=>{
+      const ta=ov.querySelector("#bk-text"); ta.focus(); ta.select();
+      let ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+      if(!ok && navigator.clipboard){ navigator.clipboard.writeText(ta.value).catch(()=>{}); }
+      const b=ov.querySelector("#bk-copy"); b.textContent="Copied ✓"; setTimeout(()=>{ b.textContent="Copy"; },1500);
+    });
+    ov.querySelector("#bk-download").addEventListener("click",()=>{
+      try{
+        const full=JSON.stringify({trips:state.trips,overallBudget:state.overallBudget});
+        const blob=new Blob([full],{type:"application/json"});
+        const url=URL.createObjectURL(blob), a=document.createElement("a");
+        a.href=url; a.download="my-trips-"+iso(new Date())+".json";
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+      }catch(e){ alert("Download was blocked here — use Copy instead."); }
+    });
+  } else {
+    const doLoad=txt=>{
+      try{
+        const data=JSON.parse(txt.trim());
+        const trips=normalize(data);
+        if(!trips) throw 0;
+        state.trips=trips; persist(); ov.remove(); state.view="overview"; render();
+      }catch(e){ alert("That doesn't look like a valid backup — make sure you pasted the whole thing."); }
+    };
+    ov.querySelector("#bk-load").addEventListener("click",()=>doLoad(ov.querySelector("#bk-text").value));
+    ov.querySelector("#bk-file").addEventListener("click",()=>{
+      const inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json,.txt";
+      inp.addEventListener("change",()=>{ const f=inp.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>doLoad(String(r.result)); r.readAsText(f); });
+      inp.click();
+    });
+  }
+}
+
+/* ============ events (delegated once) ============ */
+function updateBudgetRemaining(){
+  const t=curTrip(); if(!t) return;
+  const left=(+t.budget||0)-(+t.spent||0);
+  const box=document.getElementById("bud-remaining");
+  if(box){ box.textContent=money(Math.abs(left)); box.classList.toggle("over",left<0); }
+  const lbl=document.getElementById("bud-remaining-label"); if(lbl) lbl.textContent=left<0?"Over by":"Remaining";
+}
+function updateOverviewLeft(){
+  const totalSpent=state.trips.reduce((s,t)=>s+(+t.spent||0),0);
+  const left=(+state.overallBudget||0)-totalSpent;
+  const el=document.getElementById("ov-left"); if(el){ el.textContent=money(Math.abs(left)); el.classList.toggle("overtext",left<0); }
+  const lbl=document.getElementById("ov-left-label"); if(lbl) lbl.textContent=left<0?"Over budget":"Left to spend";
+}
+
+function initEvents(){
+  const app=document.getElementById("app");
+
+  app.addEventListener("click", e=>{
+    const t=curTrip();
+    const act=e.target.closest("[data-act]"); if(act){ handleAct(act.dataset.act); return; }
+    const trip=e.target.closest("[data-trip]"); if(trip){ state.tripId=trip.dataset.trip; state.view="detail"; state.tab="itinerary"; render(); window.scrollTo(0,0); return; }
+    const tab=e.target.closest("[data-tab]"); if(tab){ state.tab=tab.dataset.tab; render(); return; }
+    const tp=e.target.closest("[data-toggle-pack]"); if(tp&&t){ const p=t.packing.find(x=>x.id===tp.dataset.togglePack); if(p){ p.done=!p.done; persist(); renderTab(); } return; }
+    const dpk=e.target.closest("[data-del-pack]"); if(dpk&&t){ t.packing=t.packing.filter(x=>x.id!==dpk.dataset.delPack); persist(); renderTab(); return; }
+    const dit=e.target.closest("[data-del-itin]"); if(dit&&t){ t.itinerary=t.itinerary.filter(x=>x.id!==dit.dataset.delItin); persist(); renderTab(); return; }
+    const dtr=e.target.closest("[data-del-transport]"); if(dtr&&t){ t.transport=t.transport.filter(x=>x.id!==dtr.dataset.delTransport); persist(); renderTab(); return; }
+    const dst=e.target.closest("[data-del-stay]"); if(dst&&t){ t.stay=t.stay.filter(x=>x.id!==dst.dataset.delStay); persist(); renderTab(); return; }
+    const dim=e.target.closest("[data-del-img]"); if(dim&&t){ t.images=t.images.filter(x=>x.id!==dim.dataset.delImg); persist(); renderTab(); return; }
+    const dex=e.target.closest("[data-del-exp]"); if(dex&&t){ const ex=t.expenses.find(x=>x.id===dex.dataset.delExp); if(ex){ t.spent=Math.max(0,(+t.spent||0)-(+ex.amount||0)); t.expenses=t.expenses.filter(x=>x.id!==dex.dataset.delExp); persist(); renderTab(); } return; }
+  });
+
+  app.addEventListener("input", e=>{
+    if(e.target.id==="notes-area"){ const t=curTrip(); if(t){ t.notes=e.target.value; clearTimeout(notesTimer); notesTimer=setTimeout(persist,400); } }
+  });
+
+  app.addEventListener("change", e=>{
+    const t=curTrip();
+    if(e.target.id==="ov-budget"){ state.overallBudget=Math.max(0,+e.target.value||0); persist(); updateOverviewLeft(); }
+    else if(e.target.id==="bud-budget"&&t){ t.budget=Math.max(0,+e.target.value||0); persist(); updateBudgetRemaining(); }
+    else if(e.target.id==="bud-spent"&&t){ t.spent=Math.max(0,+e.target.value||0); persist(); updateBudgetRemaining(); }
+  });
+
+  app.addEventListener("keydown", e=>{
+    if(e.key!=="Enter") return;
+    const id=e.target.id;
+    if(id==="pack-input"){ e.preventDefault(); handleAct("add-pack"); }
+    else if(id==="it-title"||id==="it-note"){ e.preventDefault(); handleAct("add-itin"); }
+    else if(id==="tr-label"||id==="tr-detail"){ e.preventDefault(); handleAct("add-transport"); }
+    else if(id==="st-name"||id==="st-detail"){ e.preventDefault(); handleAct("add-stay"); }
+    else if(id==="exp-label"||id==="exp-amt"){ e.preventDefault(); handleAct("add-exp"); }
+  });
+}
+
+function handleAct(act){
+  const t=curTrip();
+  switch(act){
+    case "new": openTripModal(null); break;
+    case "edit": openTripModal(t); break;
+    case "export": openBackup("export"); break;
+    case "import": openBackup("import"); break;
+    case "back": state.view="overview"; render(); window.scrollTo(0,0); break;
+    case "samples": state.trips=sampleTrips(); state.overallBudget=1800; persist(); render(); break;
+    case "deltrip": if(confirm(`Delete ${t.destination}? This can't be undone.`)){ deleteTrip(t.id); state.view="overview"; render(); } break;
+    case "add-pack":{ const v=val("pack-input"); if(v){ t.packing.push({id:uid(),text:v,done:false}); persist(); renderTab(); focusId("pack-input"); } break; }
+    case "add-itin":{
+      const title=val("it-title");
+      if(title){ t.itinerary.push({id:uid(),date:val("it-date")||t.startDate,time:val("it-time"),title,note:val("it-note")}); persist(); renderTab(); focusId("it-title"); }
+      break;
+    }
+    case "add-transport":{
+      const label=val("tr-label");
+      if(label){ t.transport.push({id:uid(),mode:val("tr-mode")||"Flight",label,date:val("tr-date")||t.startDate,time:val("tr-time"),detail:val("tr-detail"),cost:Math.max(0,+val("tr-cost")||0)}); persist(); renderTab(); focusId("tr-label"); }
+      break;
+    }
+    case "add-stay":{
+      const name=val("st-name");
+      if(name){ t.stay.push({id:uid(),name,checkin:val("st-in")||t.startDate,checkout:val("st-out")||t.endDate,detail:val("st-detail"),cost:Math.max(0,+val("st-cost")||0)}); persist(); renderTab(); focusId("st-name"); }
+      break;
+    }
+    case "add-exp":{
+      const label=val("exp-label"), amt=+val("exp-amt");
+      if(label && amt>0){ t.expenses.push({id:uid(),label,cat:val("exp-cat")||"Other",amount:amt}); t.spent=(+t.spent||0)+amt; persist(); renderTab(); focusId("exp-label"); }
+      break;
+    }
+    case "add-photo":{
+      const inp=document.createElement("input"); inp.type="file"; inp.accept="image/*"; inp.multiple=true;
+      inp.addEventListener("change",()=>{ [...inp.files].forEach(f=>addImage(t,f)); });
+      inp.click();
+      break;
+    }
+  }
+}
+
+/* ============ boot ============ */
+(async function(){
+  initEvents();
+  const raw=await store.load();
+  const trips=raw?normalize(raw):null;
+  if(trips && trips.length){ state.trips=trips; }
+  else { state.trips=[]; state.overallBudget=0; }
+  render();
+})();
+</script>
